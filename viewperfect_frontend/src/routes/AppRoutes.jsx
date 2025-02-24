@@ -8,17 +8,15 @@ import SeatSelectionPage from "../pages/SeatSelectionPage";
 import OrdersPage from "../pages/OrdersPage";
 
 const AppRoutes = () => (
-  <Router>
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/movies" element={<MovieSearchPage />} />
-      <Route path="/cinema/:id" element={<CinemaDetailsPage />} />
-      <Route path="/seats" element={<SeatSelectionPage />} />
-      <Route path="/orders" element={<OrdersPage />} />
-    </Routes>
-  </Router>
+  <Routes>
+    <Route path="/" element={<HomePage />} />
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/register" element={<RegisterPage />} />
+    <Route path="/movies" element={<MovieSearchPage />} />
+    <Route path="/cinema/:id" element={<CinemaDetailsPage />} />
+    <Route path="/seats" element={<SeatSelectionPage />} />
+    <Route path="/orders" element={<OrdersPage />} />
+  </Routes>
 );
 
 export default AppRoutes;
