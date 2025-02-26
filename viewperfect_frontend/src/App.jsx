@@ -1,11 +1,12 @@
 import AppRoutes from "./routes/AppRoutes";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, Typography } from "antd";
 import { Link } from "react-router-dom";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import { BrowserRouter as Router } from "react-router-dom";
 import CartButton from "./components/CartButton";
 
 const { Header, Content, Footer } = Layout;
+const { Title } = Typography;
 
 function App() {
   return (
@@ -20,14 +21,12 @@ function App() {
             alignItems: "center",
           }}
         >
-          <Menu theme="dark" mode="horizontal" defaultSelectedKeys={["home"]}>
-            <Menu.Item key="home">
-              <Link to="/">Home</Link>
-            </Menu.Item>
-            <Menu.Item key="movies">
-              <Link to="/movies">Movies</Link>
-            </Menu.Item>
-          </Menu>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <Title level={3} style={{ color: "white", margin: "0 20px 0 0" }}>
+              ViewPerfect
+            </Title>
+          </div>
+
           <CartButton />
         </Header>
 
