@@ -10,7 +10,7 @@ const recommendedMovies = [
 const UserHomePage = () => {
   return (
     <div style={{ padding: "20px" }}>
-      <h1>Welcome to ViewPerfect (User)</h1>
+      <h1>Welcome to ViewPerfect</h1>
       <Link to="/movies">
         <Button type="primary" style={{ marginBottom: "20px" }}>
           Search Movies

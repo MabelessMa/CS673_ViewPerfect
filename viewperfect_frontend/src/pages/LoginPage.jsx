@@ -1,8 +1,34 @@
-import { Button, Card, Input, Form } from "antd";
+import { Button, Card, Input, Form, message } from "antd";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+
+  const mockUsers = [
+    { username: "user", password: "123456", role: "user" },
+    { username: "admin", password: "admin123", role: "admin" },
+  ];
+
   const onFinish = (values) => {
-    console.log("Login Success:", values);
+    const { username, password } = values;
+    const matchedUser = mockUsers.find(
+      (user) => user.username === username && user.password === password
+    );
+
+    if (matchedUser) {
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("role", matchedUser.role);
+
+      message.success("Login successful!");
+
+      if (matchedUser.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    } else {
+      message.error("Invalid username or password");
+    }
   };
 
   return (

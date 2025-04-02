@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Table, Button, Modal, Form, Input, message } from "antd";
 
-// 模拟电影数据
 const initialMovies = [
   { id: "1", title: "The Matrix", genre: "Sci-Fi" },
   { id: "2", title: "Inception", genre: "Action" },
