@@ -1,0 +1,108 @@
+.screen-svg-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.screen-line {
+  margin: 0 auto;
+}
+
+.screen-label {
+  color: #666;
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: -5px;
+  letter-spacing: 1px;
+}
+
+.seat-grid {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.seat-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.seat-btn-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+}
+
+.seat-icon {
+  font-size: 40px;
+}
+
+.seat-id-overlay {
+  position: absolute;
+  top: 8px;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 状态样式 */
+.seat-btn-wrapper.selected .seat-icon {
+  color: blue;
+}
+.seat-btn-wrapper.occupied .seat-icon {
+  color: red;
+}
+.seat-btn-wrapper.recommended .seat-icon {
+  color: #52c41a;
+}
+
+.aisle-space {
+  width: 24px;
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+  color: #666;
+  font-size: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-icon {
+  font-size: 24px;
+}
+
+.legend-icon.available {
+  color: black;
+}
+
+.legend-icon.recommended {
+  color: #52c41a;
+}
+
+.legend-icon.selected {
+  color: blue;
+}
+
+.legend-icon.occupied {
+  color: red;
+}

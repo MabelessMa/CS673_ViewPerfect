@@ -1,11 +1,14 @@
 import { Button, message, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
+import { FaCouch, FaWheelchair, FaUserFriends } from "react-icons/fa";
 import { useState } from "react";
+import React from "react";
+import "../styles/SeatSelectionPage.css";
 
 // 多排 mock seat data
-const rows = ["A", "B", "C"];
+const rows = ["A", "B", "C", "D", "E", "F"];
 const seatLayout = rows.flatMap((row) =>
-  Array.from({ length: 8 }, (_, i) => ({
+  Array.from({ length: 11 }, (_, i) => ({
     id: `${row}${i + 1}`,
     row,
     number: i + 1,
@@ -16,7 +19,7 @@ const seatLayout = rows.flatMap((row) =>
 
 const SeatSelectionPage = () => {
   const navigate = useNavigate();
-  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
 
   const availableSeats = seatLayout.filter((seat) => seat.available);
   const recommendedSeat = availableSeats.sort((a, b) => b.score - a.score)[0];
@@ -30,6 +33,14 @@ const SeatSelectionPage = () => {
     navigate("/orders");
   };
 
+  const toggleSeatSelection = (seatId) => {
+    if (selectedSeats.includes(seatId)) {
+      setSelectedSeats(selectedSeats.filter((id) => id !== seatId));
+    } else {
+      setSelectedSeats([...selectedSeats, seatId]);
+    }
+  };
+
   return (
     <div style={{ padding: "20px" }}>
       <h1>Select Your Seats</h1>
@@ -40,59 +51,87 @@ const SeatSelectionPage = () => {
         <Tag color="green">Highest Rated</Tag>
       </div>
 
+      {/* 屏幕标识 */}
+      <div className="screen-svg-container">
+        <svg
+          width="100%"
+          height="60"
+          viewBox="0 0 100 10"
+          preserveAspectRatio="none"
+          className="screen-line"
+        >
+          <path
+            d="M 0 10 Q 50 0 100 10"
+            stroke="white"
+            strokeWidth="2"
+            fill="transparent"
+          />
+        </svg>
+        <div className="screen-label">SCREEN</div>
+      </div>
+
       {/* 渲染多排座位 */}
-      <div className="seat-grid" style={{ display: "grid", gap: "16px" }}>
+      <div className="seat-grid">
         {rows.map((row) => (
-          <div
-            key={row}
-            style={{ display: "flex", gap: "8px", alignItems: "center" }}
-          >
+          <div key={row} className="seat-row">
             <strong>{row}</strong>
             {seatLayout
               .filter((seat) => seat.row === row)
-              .map((seat) => {
-                const isSelected = seat.id === selectedSeat;
+              .map((seat, index) => {
+                const isSelected = selectedSeats.includes(seat.id);
                 const isRecommended = seat.id === recommendedSeat.id;
 
+                // 设置中间过道（示例：在第3个位置加一个空格）
+                const isAisle = index === 2 || index === 9;
+
                 return (
-                  <Button
-                    key={seat.id}
-                    shape="circle"
-                    type={
-                      !seat.available
-                        ? "default"
-                        : isSelected
-                        ? "primary"
-                        : isRecommended
-                        ? "default"
-                        : "default"
-                    }
-                    disabled={!seat.available}
-                    style={{
-                      backgroundColor: isRecommended ? "#52c41a" : undefined,
-                      color: isRecommended ? "white" : undefined,
-                      border:
-                        isRecommended && !isSelected
-                          ? "2px solid #52c41a"
-                          : undefined,
-                    }}
-                    onClick={() => setSelectedSeat(seat.id)}
-                  >
-                    {seat.number}
-                  </Button>
+                  <React.Fragment key={seat.id}>
+                    {isAisle && <div className="aisle-space" />}
+
+                    <div
+                      className={`seat-btn-wrapper
+      ${!seat.available ? "occupied" : ""}
+      ${isRecommended ? "recommended" : ""}
+      ${isSelected ? "selected" : ""}
+    `}
+                      onClick={() =>
+                        seat.available && toggleSeatSelection(seat.id)
+                      }
+                    >
+                      <span className="seat-id-overlay">{seat.id}</span>
+                      <FaCouch className="seat-icon" />
+                    </div>
+                  </React.Fragment>
                 );
               })}
           </div>
         ))}
       </div>
 
-      <Button
-        type="primary"
-        style={{ marginTop: "24px" }}
-        onClick={handleAddToOrders}
-      >
-        Add to Orders
-      </Button>
+      <div style={{ textAlign: "center", marginTop: "60px" }}>
+        <Button type="primary" onClick={handleAddToOrders}>
+          Add to Orders
+        </Button>
+      </div>
+
+      <div className="legend">
+        <div className="legend-item">
+          <FaCouch className="legend-icon recommended" />
+          <span>Recommended Seat</span>
+        </div>
+        <div className="legend-item">
+          <FaCouch className="legend-icon available" />
+          <span>Available</span>
+        </div>
+        <div className="legend-item">
+          <FaCouch className="legend-icon selected" />
+          <span>Selected</span>
+        </div>
+        <div className="legend-item">
+          <FaCouch className="legend-icon occupied" />
+          <span>Occupied</span>
+        </div>
+      </div>
     </div>
   );
 };
