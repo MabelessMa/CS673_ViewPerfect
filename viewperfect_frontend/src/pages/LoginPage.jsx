@@ -8,11 +8,6 @@ const LoginPage = () => {
   const [registerLoading, setRegisterLoading] = useState(false);
   const navigate = useNavigate();
 
-  const mockUsers = [
-    { username: "user", password: "123456", role: "user" },
-    { username: "admin", password: "admin123", role: "admin" },
-  ];
-
   const handleRegister = () => {
     setRegisterVisible(true); // open register modal
   };

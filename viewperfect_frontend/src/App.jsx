@@ -10,11 +10,6 @@ import {
 } from "@ant-design/icons";
 import CartButton from "./components/CartButton";
 
-localStorage.setItem("isLoggedIn", "true");
-localStorage.setItem("role", "user");
-localStorage.setItem("userId", "mock-user-id-123");
-localStorage.setItem("token", "mock-token-abc123");
-
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
 
