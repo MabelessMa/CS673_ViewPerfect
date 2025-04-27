@@ -6,7 +6,6 @@ import MovieManagementPage from "../pages/MovieManagementPage";
 import AnalyticsPage from "../pages/AnalyticsPage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
-import MovieSearchPage from "../pages/MovieSearchPage";
 import MovieDetailsPage from "../pages/MovieDetailsPage";
 import CinemaDetailsPage from "../pages/CinemaDetailsPage";
 import SeatSelectionPage from "../pages/SeatSelectionPage";
@@ -24,15 +23,6 @@ const AppRoutes = () => (
         <PrivateRoute>
           {" "}
           <UserHomePage />{" "}
-        </PrivateRoute>
-      }
-    />
-
-    <Route
-      path="/movies"
-      element={
-        <PrivateRoute>
-          <MovieSearchPage />
         </PrivateRoute>
       }
     />

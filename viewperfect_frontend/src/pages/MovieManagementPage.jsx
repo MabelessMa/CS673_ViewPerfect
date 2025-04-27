@@ -19,7 +19,6 @@ const MovieManagementPage = () => {
 
   const handleAddOrEdit = (values) => {
     if (editingMovie) {
-      // 编辑现有电影
       setMovies(
         movies.map((movie) =>
           movie.id === editingMovie.id ? { ...movie, ...values } : movie
@@ -27,7 +26,6 @@ const MovieManagementPage = () => {
       );
       message.success("Movie updated successfully");
     } else {
-      // 添加新电影
       const newMovie = { ...values, id: Date.now().toString() };
       setMovies([...movies, newMovie]);
       message.success("Movie added successfully");

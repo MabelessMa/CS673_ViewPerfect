@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Button, message, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 import { FaCouch, FaWheelchair, FaUserFriends } from "react-icons/fa";
@@ -5,8 +6,9 @@ import { useState } from "react";
 import React from "react";
 import "../styles/SeatSelectionPage.css";
 
-// 多排 mock seat data
+// mock seat data
 const rows = ["A", "B", "C", "D", "E", "F"];
+
 const seatLayout = rows.flatMap((row) =>
   Array.from({ length: 11 }, (_, i) => ({
     id: `${row}${i + 1}`,
@@ -19,25 +21,48 @@ const seatLayout = rows.flatMap((row) =>
 
 const SeatSelectionPage = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState([]);
 
   const availableSeats = seatLayout.filter((seat) => seat.available);
   const recommendedSeat = availableSeats.sort((a, b) => b.score - a.score)[0];
-
-  const handleAddToOrders = () => {
-    if (!selectedSeat) {
-      message.warning("Please select a seat before proceeding.");
-      return;
-    }
-    message.success(`Seat ${selectedSeat} added to your orders!`);
-    navigate("/orders");
-  };
 
   const toggleSeatSelection = (seatId) => {
     if (selectedSeats.includes(seatId)) {
       setSelectedSeats(selectedSeats.filter((id) => id !== seatId));
     } else {
       setSelectedSeats([...selectedSeats, seatId]);
+    }
+  };
+
+  const handleSubmitOrder = async () => {
+    if (selectedSeats.length === 0) {
+      message.warning("Please select at least one seat.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const orderData = {
+        userId: "mock-user-id",
+        seats: selectedSeats,
+        movieId: "mock-movie-id",
+        showtimeId: "mock-showtime-id",
+      };
+
+      const response = await axios.post(
+        "http://localhost:8080/api/orders",
+        orderData
+      );
+
+      message.success("Order submitted successfully!");
+      navigate("/orders");
+    } catch (error) {
+      console.error("Order submission failed:", error);
+      message.error("Failed to submit order.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,7 +95,7 @@ const SeatSelectionPage = () => {
         <div className="screen-label">SCREEN</div>
       </div>
 
-      {/* 渲染多排座位 */}
+      {/* Render Seats */}
       <div className="seat-grid">
         {rows.map((row) => (
           <div key={row} className="seat-row">
@@ -81,7 +106,7 @@ const SeatSelectionPage = () => {
                 const isSelected = selectedSeats.includes(seat.id);
                 const isRecommended = seat.id === recommendedSeat.id;
 
-                // 设置中间过道（示例：在第3个位置加一个空格）
+                // Set Pass
                 const isAisle = index === 2 || index === 9;
 
                 return (
@@ -108,12 +133,14 @@ const SeatSelectionPage = () => {
         ))}
       </div>
 
+      {/* submit order */}
       <div style={{ textAlign: "center", marginTop: "60px" }}>
-        <Button type="primary" onClick={handleAddToOrders}>
+        <Button type="primary" onClick={handleSubmitOrder}>
           Add to Orders
         </Button>
       </div>
 
+      {/* render icon */}
       <div className="legend">
         <div className="legend-item">
           <FaCouch className="legend-icon recommended" />

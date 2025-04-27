@@ -1,7 +1,11 @@
-import { Button, Card, Input, Form, message } from "antd";
+import { Button, Card, Input, Form, message, Modal, Checkbox } from "antd";
+import { useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
+  const [registerVisible, setRegisterVisible] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
   const navigate = useNavigate();
 
   const mockUsers = [
@@ -9,25 +13,72 @@ const LoginPage = () => {
     { username: "admin", password: "admin123", role: "admin" },
   ];
 
-  const onFinish = (values) => {
-    const { username, password } = values;
-    const matchedUser = mockUsers.find(
-      (user) => user.username === username && user.password === password
-    );
+  const handleRegister = () => {
+    setRegisterVisible(true); // open register modal
+  };
 
-    if (matchedUser) {
+  const onFinish = async (values) => {
+    const { username, password } = values;
+
+    try {
+      const response = await axios.post("http://localhost:8080/api/login", {
+        username,
+        password,
+      });
+
+      const { token, role, userId } = response.data; // Backend return
+
+      //save userid
       localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("role", matchedUser.role);
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("userId", userId);
 
       message.success("Login successful!");
 
-      if (matchedUser.role === "admin") {
+      // navigate
+      if (role === "admin") {
         navigate("/admin");
       } else {
         navigate("/");
       }
-    } else {
+    } catch (error) {
+      console.error("Login failed:", error);
       message.error("Invalid username or password");
+    }
+  };
+
+  const handleRegisterSubmit = async (values) => {
+    try {
+      setRegisterLoading(true);
+
+      const response = await axios.post(
+        "http://localhost:8080/api/users/register",
+        {
+          username: values.username,
+          password: values.password,
+          email: values.email,
+          phone: values.phone,
+          role: values.isAdmin ? "admin" : "user",
+        }
+      );
+
+      // login after register
+      const { token, userId, role } = response.data;
+
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", userId);
+      localStorage.setItem("role", role);
+
+      message.success("Registered and Logged in successfully!");
+      setRegisterVisible(false);
+      navigate(role === "admin" ? "/admin" : "/");
+    } catch (error) {
+      console.error("Register failed:", error);
+      message.error("Registration failed.");
+    } finally {
+      setRegisterLoading(false);
     }
   };
 
@@ -40,6 +91,7 @@ const LoginPage = () => {
         >
           <Input placeholder="Username" />
         </Form.Item>
+
         <Form.Item
           name="password"
           rules={[{ required: true, message: "Please enter your password!" }]}
@@ -51,7 +103,53 @@ const LoginPage = () => {
             Login
           </Button>
         </Form.Item>
+        <div style={{ textAlign: "center", margin: "16px 0", color: "gray" }}>
+          ------------------ or ------------------
+        </div>
       </Form>
+      <Button type="default" block onClick={handleRegister}>
+        Register
+      </Button>
+      <Modal
+        title="Register"
+        open={registerVisible}
+        onCancel={() => setRegisterVisible(false)}
+        footer={null}
+      >
+        <Form onFinish={handleRegisterSubmit}>
+          <Form.Item name="isAdmin" valuePropName="checked">
+            <Checkbox>Register as Admin</Checkbox>
+          </Form.Item>
+          <Form.Item name="username" rules={[{ required: true }]}>
+            <Input placeholder="Username" />
+          </Form.Item>
+          <Form.Item name="password" rules={[{ required: true }]}>
+            <Input.Password placeholder="Password" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            rules={[{ required: true, message: "Please enter your e-mail!" }]}
+          >
+            <Input placeholder="E-mail" />
+          </Form.Item>
+          <Form.Item
+            name="phone"
+            rules={[{ required: true, message: "Please enter your phone!" }]}
+          >
+            <Input placeholder="Phone" />
+          </Form.Item>
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={registerLoading}
+              block
+            >
+              Register
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </Card>
   );
 };

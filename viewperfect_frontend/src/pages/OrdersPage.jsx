@@ -1,5 +1,6 @@
 import { List, Card, Button, message, Rate } from "antd";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const mockOrders = [
   {
@@ -28,11 +29,37 @@ const mockOrders = [
 const OrdersPage = () => {
   const [orders, setOrders] = useState(mockOrders);
   const [ratings, setRatings] = useState({}); // { [orderId]: { movie: number, seat: number, submitted: boolean } }
+  const [loading, setLoading] = useState(true);
 
-  const handleCancelOrder = (id) => {
-    const updatedOrders = orders.filter((order) => order.id !== id);
-    setOrders(updatedOrders);
-    message.success("Order canceled successfully!");
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const userId = localStorage.getItem("userId");
+        const response = await axios.get(
+          `http://localhost:8080/api/orders?userId=${userId}`
+        );
+        setOrders(response.data);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+        message.error("Failed to load orders.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const handleCancelOrder = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8080/api/orders/${id}`);
+      const updatedOrders = orders.filter((order) => order.id !== id);
+      setOrders(updatedOrders);
+      message.success("Order canceled successfully!");
+    } catch (error) {
+      console.error("Order cancellation failed:", error);
+      message.error("Failed to cancel order.");
+    }
   };
 
   const handleRateChange = (orderId, type, value) => {
@@ -45,22 +72,32 @@ const OrdersPage = () => {
     }));
   };
 
-  const handleSubmitRating = (orderId) => {
+  const handleSubmitRating = async (orderId) => {
     const rating = ratings[orderId];
     if (!rating || !rating.movie || !rating.seat) {
       message.warning("Please rate both the movie and the seat.");
       return;
     }
 
-    setRatings((prev) => ({
-      ...prev,
-      [orderId]: {
-        ...prev[orderId],
-        submitted: true,
-      },
-    }));
+    try {
+      await axios.post(`http://localhost:8080/api/orders/${orderId}/rating`, {
+        movieRating: rating.movie,
+        seatRating: rating.seat,
+      });
 
-    message.success("Thank you for your feedback!");
+      setRatings((prev) => ({
+        ...prev,
+        [orderId]: {
+          ...prev[orderId],
+          submitted: true,
+        },
+      }));
+
+      message.success("Thank you for your feedback!");
+    } catch (error) {
+      console.error("Rating submission failed:", error);
+      message.error("Failed to submit rating.");
+    }
   };
 
   return (
