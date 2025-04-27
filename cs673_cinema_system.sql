@@ -1,10 +1,10 @@
-DROP DATABASE IF EXISTS CinemaSystem;
+DROP DATABASE IF EXISTS cinemasystem;
 -- create database
-CREATE DATABASE IF NOT EXISTS CinemaSystem;
-USE CinemaSystem;
+CREATE DATABASE IF NOT EXISTS cinemasystem;
+USE cinemasystem;
 
 -- User
-CREATE TABLE User (
+CREATE TABLE user (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL, 
@@ -16,7 +16,7 @@ CREATE TABLE User (
 );
 
 -- Movie
-CREATE TABLE Movie (
+CREATE TABLE movie (
     movie_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
@@ -30,7 +30,7 @@ CREATE TABLE Movie (
 );
 
 -- Hall
-CREATE TABLE Hall (
+CREATE TABLE hall (
     hall_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     capacity INT NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE Hall (
 );
 
 -- Schedule
-CREATE TABLE Schedule (
+CREATE TABLE schedule (
     schedule_id INT AUTO_INCREMENT PRIMARY KEY,
     movie_id INT NOT NULL,
     hall_id INT NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE Schedule (
 );
 
 -- Review
-CREATE TABLE Review (
+CREATE TABLE review (
     review_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     movie_id INT NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE Review (
 );
 
 -- Coupon
-CREATE TABLE Coupon (
+CREATE TABLE coupon (
     coupon_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     code VARCHAR(50) NOT NULL UNIQUE, 
@@ -74,7 +74,7 @@ CREATE TABLE Coupon (
 );
 
 -- Order
-CREATE TABLE `Order` (
+CREATE TABLE `order` (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     schedule_id INT NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE `Order` (
 );
 
 -- OrderSeat
-CREATE TABLE OrderSeat (
+CREATE TABLE orderseat (
     order_id INT NOT NULL,
     seat_id VARCHAR(50) NOT NULL,
     PRIMARY KEY (order_id, seat_id),
@@ -95,7 +95,7 @@ CREATE TABLE OrderSeat (
 );
 
 -- Payment
-CREATE TABLE Payment (
+CREATE TABLE payment (
     payment_id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     payment_method ENUM('credit_card', 'applepay', 'paypal') NOT NULL,
@@ -106,13 +106,13 @@ CREATE TABLE Payment (
 );
 
 -- Category
-CREATE TABLE Category (
+CREATE TABLE category (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE
 );
 
 -- MovieCategory
-CREATE TABLE MovieCategory (
+CREATE TABLE moviecategory (
     movie_id INT NOT NULL,
     category_id INT NOT NULL,
     PRIMARY KEY (movie_id, category_id),
@@ -121,7 +121,7 @@ CREATE TABLE MovieCategory (
 );
 
 -- Admin
-CREATE TABLE Admin (
+CREATE TABLE admin (
     admin_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
