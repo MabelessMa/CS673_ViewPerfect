@@ -11,7 +11,8 @@ CREATE TABLE User (
     email VARCHAR(100) NOT NULL UNIQUE,
     phone VARCHAR(15),
     loyalty_points INT DEFAULT 0,
-    role ENUM('user', 'admin') DEFAULT 'user'
+    role ENUM('user', 'admin') DEFAULT 'user',
+    avatar VARCHAR(255) -- user avatar URL
 );
 
 -- Movie
@@ -23,8 +24,9 @@ CREATE TABLE Movie (
     release_date DATE,
     duration INT,
     price DECIMAL(10, 2),
-    genre VARCHAR(50), -- movie type
-    language VARCHAR(50)
+    genre VARCHAR(50),
+    language VARCHAR(50),
+    poster VARCHAR(255) -- poster URL
 );
 
 -- Hall
@@ -52,7 +54,7 @@ CREATE TABLE Review (
     review_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     movie_id INT NOT NULL,
-    rating INT CHECK (rating BETWEEN 1 AND 5), -- rate（1-5）
+    rating INT CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
     review_time DATETIME NOT NULL,
     helpful_votes INT DEFAULT 0,
@@ -87,7 +89,7 @@ CREATE TABLE `Order` (
 -- OrderSeat
 CREATE TABLE OrderSeat (
     order_id INT NOT NULL,
-    seat_id VARCHAR(50) NOT NULL, -- seat ID (from JSON layout)
+    seat_id VARCHAR(50) NOT NULL,
     PRIMARY KEY (order_id, seat_id),
     FOREIGN KEY (order_id) REFERENCES `Order`(order_id) ON DELETE CASCADE
 );
