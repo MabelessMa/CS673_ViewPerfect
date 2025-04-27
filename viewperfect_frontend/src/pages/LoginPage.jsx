@@ -1,87 +1,104 @@
+import React from "react";
 import { Button, Card, Input, Form, message, Modal, Checkbox } from "antd";
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const LoginPage = () => {
+// 统一 Axios 实例
+const api = axios.create({
+  baseURL: "http://localhost:8080/api",
+  withCredentials: true,
+});
+
+export default function LoginPage() {
+  const [loginForm] = Form.useForm();
+  const [registerForm] = Form.useForm();
+  const [loginLoading, setLoginLoading] = useState(false);
   const [registerVisible, setRegisterVisible] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleRegister = () => {
-    setRegisterVisible(true); // open register modal
+  // 打开注册对话框并重置状态
+  const handleRegisterOpen = () => {
+    registerForm.resetFields();
+    setRegisterVisible(true);
+    setRegisterLoading(false);
   };
 
-  const onFinish = async (values) => {
-    const { username, password } = values;
-
+  // 登录提交
+  const handleLogin = async (values) => {
+    setLoginLoading(true);
     try {
-      const response = await axios.post("http://localhost:8080/api/login", {
-        username,
-        password,
+      const response = await api.post("/login", {
+        username: values.username,
+        password: values.password,
       });
-
-      const { token, role, userId } = response.data; // Backend return
-
-      //save userid
+      const { token, role, userId } = response.data;
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("userId", userId);
-
       message.success("Login successful!");
-
-      // navigate
-      if (role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      navigate(role === "admin" ? "/admin" : "/");
     } catch (error) {
-      console.error("Login failed:", error);
-      message.error("Invalid username or password");
+      const errMsg =
+        error.response?.data?.error || "Invalid username or password";
+      message.error(errMsg);
+    } finally {
+      setLoginLoading(false);
     }
   };
 
+  // 注册提交
   const handleRegisterSubmit = async (values) => {
+    setRegisterLoading(true);
     try {
-      setRegisterLoading(true);
-
-      const response = await axios.post(
-        "http://localhost:8080/api/users/register",
-        {
-          username: values.username,
-          password: values.password,
-          email: values.email,
-          phone: values.phone,
-          role: values.isAdmin ? "admin" : "user",
-        }
-      );
-
-      // login after register
+      const userRole = values.isAdmin ? "admin" : "user";
+      console.log("Register payload:", {
+        username: values.username,
+        password: values.password,
+        email: values.email,
+        phone: values.phone,
+        role: userRole,
+      });
+      const response = await api.post("/users/register", {
+        username: values.username,
+        password: values.password,
+        email: values.email,
+        phone: values.phone,
+        role: userRole,
+      });
       const { token, userId, role } = response.data;
-
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("token", token);
       localStorage.setItem("userId", userId);
       localStorage.setItem("role", role);
-
-      message.success("Registered and Logged in successfully!");
+      message.success("Registered and logged in successfully!");
       setRegisterVisible(false);
       navigate(role === "admin" ? "/admin" : "/");
     } catch (error) {
       console.error("Register failed:", error);
-      message.error("Registration failed.");
+      console.error("Response data:", error.response?.data);
+      message.error(error.response?.data?.error || "Registration failed.");
     } finally {
       setRegisterLoading(false);
     }
   };
 
   return (
-    <Card title="Login" style={{ maxWidth: 400, margin: "auto" }}>
-      <Form name="login" onFinish={onFinish}>
+    <Card
+      title="Login"
+      style={{ maxWidth: 400, margin: "auto", marginTop: 50 }}
+    >
+      <Form
+        form={loginForm}
+        layout="vertical"
+        name="login"
+        onFinish={handleLogin}
+      >
         <Form.Item
           name="username"
+          label="Username"
           rules={[{ required: true, message: "Please enter your username!" }]}
         >
           <Input placeholder="Username" />
@@ -89,56 +106,91 @@ const LoginPage = () => {
 
         <Form.Item
           name="password"
+          label="Password"
           rules={[{ required: true, message: "Please enter your password!" }]}
         >
           <Input.Password placeholder="Password" />
         </Form.Item>
+
         <Form.Item>
-          <Button type="primary" htmlType="submit" block>
+          <Button type="primary" htmlType="submit" block loading={loginLoading}>
             Login
           </Button>
         </Form.Item>
+
         <div style={{ textAlign: "center", margin: "16px 0", color: "gray" }}>
-          ------------------ or ------------------
+          ———— or ————
         </div>
       </Form>
-      <Button type="default" block onClick={handleRegister}>
+
+      <Button type="default" block onClick={handleRegisterOpen}>
         Register
       </Button>
+
       <Modal
         title="Register"
         open={registerVisible}
-        onCancel={() => setRegisterVisible(false)}
+        onCancel={() => {
+          setRegisterVisible(false);
+          registerForm.resetFields();
+          setRegisterLoading(false);
+        }}
         footer={null}
       >
-        <Form onFinish={handleRegisterSubmit}>
+        <Form
+          form={registerForm}
+          layout="vertical"
+          initialValues={{ isAdmin: false }}
+          onFinish={handleRegisterSubmit}
+        >
           <Form.Item name="isAdmin" valuePropName="checked">
             <Checkbox>Register as Admin</Checkbox>
           </Form.Item>
-          <Form.Item name="username" rules={[{ required: true }]}>
-            <Input placeholder="Username" />
+
+          <Form.Item
+            name="username"
+            label="Username"
+            rules={[{ required: true, message: "Please enter your username!" }]}
+          >
+            <Input />
           </Form.Item>
-          <Form.Item name="password" rules={[{ required: true }]}>
-            <Input.Password placeholder="Password" />
+
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[{ required: true, message: "Please enter your password!" }]}
+          >
+            <Input.Password />
           </Form.Item>
+
           <Form.Item
             name="email"
-            rules={[{ required: true, message: "Please enter your e-mail!" }]}
+            label="Email"
+            rules={[
+              { required: true, message: "Please enter your email!" },
+              { type: "email", message: "Enter a valid email!" },
+            ]}
           >
-            <Input placeholder="E-mail" />
+            <Input placeholder="Email" />
           </Form.Item>
+
           <Form.Item
             name="phone"
-            rules={[{ required: true, message: "Please enter your phone!" }]}
+            label="Phone"
+            rules={[
+              { required: true, message: "Please enter your phone!" },
+              { pattern: /^\d+$/, message: "Digits only" },
+            ]}
           >
             <Input placeholder="Phone" />
           </Form.Item>
+
           <Form.Item>
             <Button
               type="primary"
               htmlType="submit"
-              loading={registerLoading}
               block
+              loading={registerLoading}
             >
               Register
             </Button>
@@ -147,6 +199,4 @@ const LoginPage = () => {
       </Modal>
     </Card>
   );
-};
-
-export default LoginPage;
+}
