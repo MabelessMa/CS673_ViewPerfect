@@ -1,0 +1,39 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.1.0'
+    id 'io.spring.dependency-management' version '1.1.2'
+}
+
+group = 'com.viewperfect'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Web (构建 REST API)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring Boot Security (JWT 认证支持)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // Spring Boot 数据库支持 (JPA + MySQL)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'mysql:mysql-connector-java'
+
+    // Lombok (减少样板代码)
+    compileOnly 'org.project lombok:lombok'
+    annotationProcessor 'org.project lombok:lombok'
+
+    // JWT 依赖 (用于 Token 认证)
+    implementation 'io.jsonwebtoken:jjwt:0.11.5'
+
+    // 测试工具
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+}
