@@ -17,6 +17,7 @@ public class Movie {
     private String description;
 
     private String cast;
+    private String imageUrl;
     private Date releaseDate;
     private Integer duration;  // 单位：分钟
     private Double price;
@@ -31,6 +32,8 @@ public class Movie {
         return ratings.isEmpty() ? 0 : ratings.stream().mapToInt(Integer::intValue).average().orElse(0);
     }
 
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public String getTitle() {
         return title;
     }

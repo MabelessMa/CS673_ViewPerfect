@@ -18,15 +18,21 @@ public class User {
     private String email;
 
     private String phone;
+    private String avatarUrl;
 
     private Integer loyaltyPoints = 0;
 
     @Enumerated(EnumType.STRING)
     private Role role = Role.user;
 
+
+
+
     public enum Role {
         user, admin
     }
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
     public String getUsername() {
         return username;

@@ -1,41 +1,71 @@
 package org.example.entity;
 
 import jakarta.persistence.*;
+import org.example.entity.Coupon;
+import org.example.entity.Schedule;
+import org.example.entity.Seat;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "`order`")  // 将表名改为 'order'，与数据库一致
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "order_id")
+    private Integer orderId;
 
-    // 关联用户
+
+    // 用户关联
     @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private String cinemaName;
-    private String hallName;
-    private String movieTitle;
+    // 排期关联（需要定义 Schedule 实体类）
+    @ManyToOne
+    @JoinColumn(name = "schedule_id", nullable = false)
+    private Schedule schedule;
 
-    private String seatInfo;   // 示例："A5"
-    private Double price;
+    // 优惠券关联（可为空）
+    @ManyToOne
+    @JoinColumn(name = "coupon_id", nullable = true)
+    private Coupon coupon;
 
-    private String status = "CREATED";  // CREATED, PAID, CANCELLED
+    @ManyToMany
+    @JoinTable(
+            name = "order_seat",
+            joinColumns = @JoinColumn(name = "order_id"),
+            inverseJoinColumns = @JoinColumn(name = "seat_id")
+    )
+    private List<Seat> seats = new ArrayList<>();
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+
+
+    // 订单时间，默认设置为当前时间
+    private LocalDateTime orderTime = LocalDateTime.now();
+
+    // 订单状态（使用枚举类型）
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status = OrderStatus.UNPAID; // 默认状态为 'unpaid'
+
+    // 订单状态的枚举
+    public enum OrderStatus {
+        UNPAID, PAID, CANCELED, COMPLETED
+    }
 
     public Order() {}
 
-    // Getters & Setters
+    // Getters 和 Setters
 
-    public Long getId() {
-        return id;
+    public Integer getOrderId() {
+        return orderId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setOrderId(Integer orderId) {
+        this.orderId = orderId;
     }
 
     public User getUser() {
@@ -46,59 +76,43 @@ public class Order {
         this.user = user;
     }
 
-    public String getCinemaName() {
-        return cinemaName;
+    public Schedule getSchedule() {
+        return schedule;
     }
 
-    public void setCinemaName(String cinemaName) {
-        this.cinemaName = cinemaName;
+    public void setSchedule(Schedule schedule) {
+        this.schedule = schedule;
     }
 
-    public String getHallName() {
-        return hallName;
+    public Coupon getCoupon() {
+        return coupon;
     }
 
-    public void setHallName(String hallName) {
-        this.hallName = hallName;
+    public void setCoupon(Coupon coupon) {
+        this.coupon = coupon;
     }
 
-    public String getMovieTitle() {
-        return movieTitle;
+    public LocalDateTime getOrderTime() {
+        return orderTime;
     }
 
-    public void setMovieTitle(String movieTitle) {
-        this.movieTitle = movieTitle;
+    public void setOrderTime(LocalDateTime orderTime) {
+        this.orderTime = orderTime;
     }
 
-    public String getSeatInfo() {
-        return seatInfo;
+    public List<Seat> getSeats() {
+        return seats;
     }
 
-    public void setSeatInfo(String seatInfo) {
-        this.seatInfo = seatInfo;
+    public void setSeats(List<Seat> seats) {
+        this.seats = seats;
     }
 
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public String getStatus() {
+    public OrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(OrderStatus status) {
         this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 }

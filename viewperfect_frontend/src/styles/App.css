@@ -2,7 +2,15 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
-  text-align: center;
+  /* text-align: center; 删除这行 */
+}
+
+.ant-message {
+  top: 80px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  text-align: left !important;
 }
 
 .logo {

@@ -1,31 +1,61 @@
 import axios from "axios";
 import { Button, message, Tag } from "antd";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaCouch, FaWheelchair, FaUserFriends } from "react-icons/fa";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import React from "react";
 import "../styles/SeatSelectionPage.css";
-
-// mock seat data
-const rows = ["A", "B", "C", "D", "E", "F"];
-
-const seatLayout = rows.flatMap((row) =>
-  Array.from({ length: 11 }, (_, i) => ({
-    id: `${row}${i + 1}`,
-    row,
-    number: i + 1,
-    available: Math.random() > 0.2,
-    score: +(Math.random() * 5).toFixed(1),
-  }))
-);
+import { getCurrentFormattedTime } from "../utils/dataUtils";
 
 const SeatSelectionPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
+  const { hallId, scheduleId } = location.state || {};
+  const [seats, setSeats] = useState([]);
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState([]);
 
-  const availableSeats = seatLayout.filter((seat) => seat.available);
-  const recommendedSeat = availableSeats.sort((a, b) => b.score - a.score)[0];
+  const token = localStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+  useEffect(() => {
+    async function fetchSeats() {
+      if (!hallId) return;
+
+      try {
+        const response = await axios.get(
+          `http://localhost:8080/api/halls/${hallId}/seats`,
+          { headers }
+        );
+
+        console.log("seat data", response.data);
+
+        const seatData = response.data.map((seat) => {
+          const rowLetter = String.fromCharCode(65 + (seat.rowNumber - 1)); // A = 65
+          return {
+            num: `${rowLetter}${seat.seatNumber}`, // 改成 A1, B3 等格式
+            id: seat.seatId,
+            row: seat.rowNumber,
+            number: seat.seatNumber,
+            available: seat.status === "AVAILABLE",
+            status: seat.status,
+            score: seat.overallScore,
+          };
+        });
+
+        setSeats(seatData);
+
+        const rowSet = new Set(seatData.map((seat) => seat.row));
+        setRows(Array.from(rowSet).sort());
+      } catch (error) {
+        console.error("Failed to fetch seats", error);
+        message.error("Failed to load seats.");
+      }
+    }
+
+    fetchSeats();
+  }, [hallId]);
 
   const toggleSeatSelection = (seatId) => {
     if (selectedSeats.includes(seatId)) {
@@ -35,6 +65,9 @@ const SeatSelectionPage = () => {
     }
   };
 
+  const availableSeats = seats.filter((seat) => seat.available);
+  const recommendedSeat = availableSeats.sort((a, b) => b.score - a.score)[0];
+
   const handleSubmitOrder = async () => {
     if (selectedSeats.length === 0) {
       message.warning("Please select at least one seat.");
@@ -43,19 +76,25 @@ const SeatSelectionPage = () => {
 
     try {
       setLoading(true);
+      const rawUserId = localStorage.getItem("userId");
+      if (!rawUserId) {
+        message.error("User not logged in.");
+        return;
+      }
+      const userId = parseInt(rawUserId);
 
       const orderData = {
-        userId: "mock-user-id",
-        seats: selectedSeats,
-        movieId: "mock-movie-id",
-        showtimeId: "mock-showtime-id",
+        scheduleId: scheduleId,
+        seatIds: selectedSeats,
       };
+
+      console.log("order success", orderData);
 
       const response = await axios.post(
         "http://localhost:8080/api/orders",
-        orderData
+        orderData,
+        { headers }
       );
-
       message.success("Order submitted successfully!");
       navigate("/orders");
     } catch (error) {
@@ -66,17 +105,20 @@ const SeatSelectionPage = () => {
     }
   };
 
+  if (loading) {
+    return <p>Loading seats...</p>;
+  }
+
   return (
     <div style={{ padding: "20px" }}>
       <h1>Select Your Seats</h1>
 
       <div style={{ marginBottom: "10px" }}>
         Recommended Seat:{" "}
-        <strong style={{ color: "#52c41a" }}>{recommendedSeat?.id}</strong>{" "}
+        <strong style={{ color: "#52c41a" }}>{recommendedSeat?.num}</strong>{" "}
         <Tag color="green">Highest Rated</Tag>
       </div>
 
-      {/* 屏幕标识 */}
       <div className="screen-svg-container">
         <svg
           width="100%"
@@ -95,35 +137,30 @@ const SeatSelectionPage = () => {
         <div className="screen-label">SCREEN</div>
       </div>
 
-      {/* Render Seats */}
+      {/* Render seats */}
       <div className="seat-grid">
         {rows.map((row) => (
           <div key={row} className="seat-row">
             <strong>{row}</strong>
-            {seatLayout
+            {seats
               .filter((seat) => seat.row === row)
               .map((seat, index) => {
                 const isSelected = selectedSeats.includes(seat.id);
-                const isRecommended = seat.id === recommendedSeat.id;
-
-                // Set Pass
-                const isAisle = index === 2 || index === 9;
+                const isRecommended = seat.id === recommendedSeat?.id;
 
                 return (
                   <React.Fragment key={seat.id}>
-                    {isAisle && <div className="aisle-space" />}
-
                     <div
                       className={`seat-btn-wrapper
-      ${!seat.available ? "occupied" : ""}
-      ${isRecommended ? "recommended" : ""}
-      ${isSelected ? "selected" : ""}
-    `}
+                        ${!seat.available ? "occupied" : ""}
+                        ${isRecommended ? "recommended" : ""}
+                        ${isSelected ? "selected" : ""}
+                      `}
                       onClick={() =>
                         seat.available && toggleSeatSelection(seat.id)
                       }
                     >
-                      <span className="seat-id-overlay">{seat.id}</span>
+                      <span className="seat-id-overlay">{seat.num}</span>
                       <FaCouch className="seat-icon" />
                     </div>
                   </React.Fragment>
@@ -133,14 +170,13 @@ const SeatSelectionPage = () => {
         ))}
       </div>
 
-      {/* submit order */}
       <div style={{ textAlign: "center", marginTop: "60px" }}>
         <Button type="primary" onClick={handleSubmitOrder}>
           Add to Orders
         </Button>
       </div>
 
-      {/* render icon */}
+      {/* 底部图例 */}
       <div className="legend">
         <div className="legend-item">
           <FaCouch className="legend-icon recommended" />

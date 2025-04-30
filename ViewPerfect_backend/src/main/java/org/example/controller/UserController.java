@@ -1,5 +1,4 @@
-
-        package org.example.controller;
+package org.example.controller;
 
 import org.example.entity.User;
 import org.example.repository.UserRepository;
@@ -89,6 +88,7 @@ public class UserController {
                     user.setEmail(input.getEmail());
                     user.setPhone(input.getPhone());
                     user.setPassword(input.getPassword());
+                    user.setAvatarUrl(input.getAvatarUrl());
                     // 禁止修改 role 和 loyaltyPoints
                     return ResponseEntity.ok(userRepo.save(user));
                 })

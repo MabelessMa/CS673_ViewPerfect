@@ -1,38 +1,83 @@
 package org.example.entity;
 
 import jakarta.persistence.*;
+import org.example.entity.Hall;
+import org.example.entity.Schedule;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 public class Seat {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer seatId;
 
-    @ManyToOne
-    @JoinColumn(name = "hall_id")
+    @Id
+    @Column(name = "seat_id", length = 50)
+    private String seatId;  // 座位ID（VARCHAR(50)）
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hall_id", nullable = false)
     private Hall hall;
 
-    private String rowNumber;
-    private Integer seatNumber;
+    @Column(name = "row_num", length = 10)
+    private String rowNumber;    // 对应 SQL 的 row_num
 
-    private String status = "AVAILABLE";  // AVAILABLE, BOOKED
+    @Column(name = "column_num")
+    private Integer seatNumber;  // 对应 SQL 的 column_num
 
-    @ElementCollection
-    private List<Integer> experienceRatings = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private SeatStatus status = SeatStatus.AVAILABLE;  // 初始状态为 AVAILABLE
 
-    public double getAverageExperienceRating() {
-        return experienceRatings.isEmpty() ? 0 : experienceRatings.stream().mapToInt(Integer::intValue).average().orElse(0);
+    @Column(name = "overall_score")
+    private Double overallScore;  // 综合评分，存储该座位的平均评分
+
+    @OneToMany(mappedBy = "seat", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SeatRating> seatRatings = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "order_seat",  // 关联表
+            joinColumns = @JoinColumn(name = "seat_id"),
+            inverseJoinColumns = @JoinColumn(name = "order_id")
+    )
+    private List<Order> orders = new ArrayList<>();  // 与多个订单关联
+
+    @ManyToMany
+    @JoinTable(
+            name = "schedule_seat",  // 关联表
+            joinColumns = @JoinColumn(name = "seat_id"),
+            inverseJoinColumns = @JoinColumn(name = "schedule_id")
+    )
+    private List<Schedule> schedules = new ArrayList<>();  // 与多个排期关联
+
+    // 枚举类型，表示座位状态
+    public enum SeatStatus {
+        AVAILABLE, BOOKED, BROKEN
     }
 
-    // Getters & Setters
+    // 计算平均评分
+    public double getAverageExperienceRating() {
+        return seatRatings.isEmpty() ? 0.0 :
+                seatRatings.stream()
+                        .mapToInt(SeatRating::getRating)
+                        .average()
+                        .orElse(0.0);
+    }
 
-    public Integer getSeatId() {
+    // ✅ 添加评分记录（和关联 Order）
+    public void addRating(Order order, int rating) {
+        SeatRating seatRating = new SeatRating(this, order, rating);
+        this.seatRatings.add(seatRating);
+        this.overallScore = getAverageExperienceRating();  // 实时更新平均评分
+    }
+
+
+    // Getters and Setters
+    public String getSeatId() {
         return seatId;
     }
 
-    public void setSeatId(Integer seatId) {
+    public void setSeatId(String seatId) {
         this.seatId = seatId;
     }
 
@@ -60,20 +105,43 @@ public class Seat {
         this.seatNumber = seatNumber;
     }
 
-    public String getStatus() {
+    public SeatStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(SeatStatus status) {
         this.status = status;
     }
 
-    public List<Integer> getExperienceRatings() {
-        return experienceRatings;
+    public List<SeatRating> getSeatRatings() {
+        return seatRatings;
     }
 
-    public void setExperienceRatings(List<Integer> experienceRatings) {
-        this.experienceRatings = experienceRatings;
+    public void setSeatRatings(List<SeatRating> seatRatings) {
+        this.seatRatings = seatRatings;
+    }
+
+    public Double getOverallScore() {
+        return overallScore;
+    }
+
+    public void setOverallScore(Double overallScore) {
+        this.overallScore = overallScore;
+    }
+
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<Order> orders) {
+        this.orders = orders;
+    }
+
+    public List<Schedule> getSchedules() {
+        return schedules;
+    }
+
+    public void setSchedules(List<Schedule> schedules) {
+        this.schedules = schedules;
     }
 }
-

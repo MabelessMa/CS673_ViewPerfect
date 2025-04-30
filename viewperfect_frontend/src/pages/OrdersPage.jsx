@@ -2,43 +2,37 @@ import { List, Card, Button, message, Rate } from "antd";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const mockOrders = [
-  {
-    id: 1,
-    movie: "The Matrix",
-    cinema: "Downtown Cinema",
-    seats: ["A1", "A2"],
-    time: "7:00 PM",
-  },
-  {
-    id: 2,
-    movie: "Inception",
-    cinema: "City Center Cinema",
-    seats: ["B1"],
-    time: "9:30 PM",
-  },
-  {
-    id: 3,
-    movie: "Interstellar",
-    cinema: "Suburban Cinema",
-    seats: ["C1", "C2", "C3"],
-    time: "6:00 PM",
-  },
-];
-
 const OrdersPage = () => {
-  const [orders, setOrders] = useState(mockOrders);
-  const [ratings, setRatings] = useState({}); // { [orderId]: { movie: number, seat: number, submitted: boolean } }
+  const [orders, setOrders] = useState([]);
+  const [ratings, setRatings] = useState({});
   const [loading, setLoading] = useState(true);
+
+  const token = localStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/orders", {
+        headers,
+      });
+      setOrders(response.data);
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+      message.error("Failed to load orders.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const userId = localStorage.getItem("userId");
-        const response = await axios.get(
-          `http://localhost:8080/api/orders?userId=${userId}`
-        );
+        const response = await axios.get("http://localhost:8080/api/orders", {
+          headers,
+        });
+        console.log("order response:", response.data); // 添加这一行
         setOrders(response.data);
+        console.log("orderid", response.data);
       } catch (error) {
         console.error("Failed to fetch orders:", error);
         message.error("Failed to load orders.");
@@ -52,13 +46,15 @@ const OrdersPage = () => {
 
   const handleCancelOrder = async (id) => {
     try {
-      await axios.delete(`http://localhost:8080/api/orders/${id}`);
-      const updatedOrders = orders.filter((order) => order.id !== id);
+      await axios.delete(`http://localhost:8080/api/orders/${id}`, {
+        headers,
+      });
+      const updatedOrders = orders.filter((order) => order.orderId !== id);
       setOrders(updatedOrders);
-      message.success("Order canceled successfully!");
+      message.success("Order deleted successfully!");
     } catch (error) {
-      console.error("Order cancellation failed:", error);
-      message.error("Failed to cancel order.");
+      console.error("Order deletion failed:", error);
+      message.error(error.response?.data || "Failed to delete order.");
     }
   };
 
@@ -72,18 +68,25 @@ const OrdersPage = () => {
     }));
   };
 
-  const handleSubmitRating = async (orderId) => {
+  const handleSubmitRating = async (orderId, seats) => {
     const rating = ratings[orderId];
-    if (!rating || !rating.movie || !rating.seat) {
-      message.warning("Please rate both the movie and the seat.");
+    if (!rating || !rating.seat) {
+      message.warning("Please rate the seat.");
       return;
     }
 
+    const payload = {
+      seatIds: seats,
+      rating: rating.seat * 2,
+    };
+    console.log("orderId", orderId);
+
     try {
-      await axios.post(`http://localhost:8080/api/orders/${orderId}/rating`, {
-        movieRating: rating.movie,
-        seatRating: rating.seat,
-      });
+      await axios.put(
+        `http://localhost:8080/api/seats/rate?orderId=${orderId}`,
+        payload,
+        { headers }
+      );
 
       setRatings((prev) => ({
         ...prev,
@@ -93,10 +96,11 @@ const OrdersPage = () => {
         },
       }));
 
-      message.success("Thank you for your feedback!");
+      message.success("Thank you for rating the seat!");
+      fetchOrders();
     } catch (error) {
-      console.error("Rating submission failed:", error);
-      message.error("Failed to submit rating.");
+      console.error("Seat rating submission failed:", error);
+      message.error("Failed to submit seat rating.");
     }
   };
 
@@ -106,51 +110,57 @@ const OrdersPage = () => {
       <List
         grid={{ gutter: 16, column: 2 }}
         dataSource={orders}
+        loading={loading}
         renderItem={(order) => {
-          const rating = ratings[order.id] || {};
+          const orderId = order.orderId;
+          const rating = ratings[orderId] || {};
+
           return (
             <List.Item>
               <Card title={order.movie}>
                 <p>Cinema: {order.cinema}</p>
-                <p>Seats: {order.seats.join(", ")}</p>
+                <p>
+                  Seats:{" "}
+                  {order.seats.map((seatId) => seatId.split("_")[1]).join(", ")}
+                </p>
                 <p>Showtime: {order.time}</p>
 
-                {!rating.submitted ? (
+                {order.status === "COMPLETED" ? (
+                  <p style={{ color: "green" }}>You've already rated.</p>
+                ) : (
                   <>
                     <p>
                       Movie Rating:{" "}
                       <Rate
                         onChange={(value) =>
-                          handleRateChange(order.id, "movie", value)
+                          handleRateChange(orderId, "movie", value)
                         }
-                        value={rating.movie}
+                        value={ratings[orderId]?.movie}
                       />
                     </p>
                     <p>
                       Seat Rating:{" "}
                       <Rate
                         onChange={(value) =>
-                          handleRateChange(order.id, "seat", value)
+                          handleRateChange(orderId, "seat", value)
                         }
-                        value={rating.seat}
+                        value={ratings[orderId]?.seat}
                       />
                     </p>
                     <Button
                       type="primary"
-                      onClick={() => handleSubmitRating(order.id)}
+                      onClick={() => handleSubmitRating(orderId, order.seats)}
                       style={{ marginBottom: "10px" }}
                     >
                       Submit Rating
                     </Button>
                   </>
-                ) : (
-                  <p style={{ color: "green" }}>You've already rated.</p>
                 )}
 
                 <Button
                   type="primary"
                   danger
-                  onClick={() => handleCancelOrder(order.id)}
+                  onClick={() => handleCancelOrder(orderId)}
                 >
                   Cancel Order
                 </Button>

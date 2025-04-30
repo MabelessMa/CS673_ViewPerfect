@@ -1,62 +1,75 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Card, List, Button, Spin, message } from "antd";
-import BookButton from "../components/BookButton";
-import { Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
+import { Card, List, Spin, message, Typography, Row, Col } from "antd";
+import axios from "axios";
+import dayjs from "dayjs";
 
-// 模拟影院数据
-const mockCinemas = [
-  {
-    id: "c1",
-    name: "Downtown Cinema",
-    address: "123 Main St, City Center",
-    phone: "123-456-7890",
-    movies: [
-      { id: "m1", title: "The Matrix" },
-      { id: "m2", title: "Inception" },
-    ],
-  },
-  {
-    id: "c2",
-    name: "City Center Cinema",
-    address: "456 Elm St, City Center",
-    phone: "987-654-3210",
-    movies: [
-      { id: "m3", title: "Interstellar" },
-      { id: "m4", title: "Tenet" },
-    ],
-  },
-  {
-    id: "c3",
-    name: "Suburban Cinema",
-    address: "789 Oak St, Suburb",
-    phone: "555-555-5555",
-    movies: [
-      { id: "m5", title: "Dune" },
-      { id: "m6", title: "Blade Runner 2049" },
-    ],
-  },
-];
+const { Title } = Typography;
 
 const CinemaDetailsPage = () => {
-  const { id } = useParams(); // 获取动态路由中的ID
-  const [cinema, setCinema] = useState(null);
+  const { id } = useParams(); // hallId
+  const [grouped, setGrouped] = useState({});
   const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   useEffect(() => {
-    setLoading(true);
+    const fetchSchedulesAndMovies = async () => {
+      try {
+        setLoading(true);
+        const scheduleRes = await axios.get(
+          "http://localhost:8080/api/schedules",
+          { headers }
+        );
+        const allSchedules = scheduleRes.data;
+        const filtered = allSchedules.filter((s) => s.hallId === parseInt(id));
 
-    // 使用模拟数据，根据ID获取影院信息
-    const cinemaData = mockCinemas.find((c) => c.id === id);
+        const movieMap = {};
 
-    if (cinemaData) {
-      setCinema(cinemaData);
-    } else {
-      message.error("Cinema not found.");
-    }
+        // 拉取所有相关 movie 的 imageUrl
+        await Promise.all(
+          filtered.map(async (s) => {
+            if (!movieMap[s.movieId]) {
+              try {
+                const res = await axios.get(
+                  `http://localhost:8080/api/movies/${s.movieId}`,
+                  { headers }
+                );
+                movieMap[s.movieId] =
+                  res.data.imageUrl || "https://via.placeholder.com/100";
+              } catch (e) {
+                movieMap[s.movieId] = "https://via.placeholder.com/100"; // fallback
+              }
+            }
+          })
+        );
 
-    setLoading(false);
-  }, [id]); // 当ID变化时重新加载数据
+        // 分组
+        const groupedByMovie = {};
+        filtered.forEach((schedule) => {
+          const movieId = schedule.movieId;
+          if (!groupedByMovie[movieId]) {
+            groupedByMovie[movieId] = {
+              title: schedule.movieTitle,
+              movieId: schedule.movieId,
+              imageUrl: movieMap[movieId],
+              schedules: [],
+            };
+          }
+          groupedByMovie[movieId].schedules.push(schedule);
+        });
+
+        setGrouped(groupedByMovie);
+      } catch (err) {
+        console.error("Failed to load data", err);
+        message.error("Failed to load schedules or movies.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSchedulesAndMovies();
+  }, [id]);
 
   if (loading) {
     return (
@@ -64,30 +77,51 @@ const CinemaDetailsPage = () => {
     );
   }
 
-  if (!cinema) {
-    return <p>Cinema not found.</p>;
-  }
-
   return (
     <div style={{ padding: "20px" }}>
-      <h1>Cinema Details: {cinema.name}</h1>
-      <Card title={cinema.name}>
-        <p>Address: {cinema.address}</p>
-        <p>Phone: {cinema.phone}</p>
-
-        <h2>Available Movies</h2>
-        <List
-          dataSource={cinema.movies}
-          renderItem={(movie) => (
-            <List.Item>
-              <Card>
-                <p>{movie.title}</p>
-                <BookButton />
-              </Card>
-            </List.Item>
-          )}
-        />
-      </Card>
+      <Title level={2}>Hall Schedule</Title>
+      {Object.values(grouped).map((movie) => (
+        <Card key={movie.movieId} style={{ marginBottom: "24px" }}>
+          <Row gutter={16}>
+            <Col span={6}>
+              <img
+                src={movie.imageUrl}
+                alt={movie.title}
+                style={{ width: "100%", borderRadius: "8px" }}
+              />
+            </Col>
+            <Col span={18}>
+              <Title level={4}>{movie.title}</Title>
+              <List
+                itemLayout="horizontal"
+                dataSource={movie.schedules}
+                renderItem={(schedule) => (
+                  <List.Item
+                    actions={[
+                      <Link
+                        to="/seats"
+                        state={{
+                          hallId: schedule.hallId,
+                          scheduleId: schedule.scheduleId,
+                        }}
+                      >
+                        Book Now
+                      </Link>,
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={`${dayjs(schedule.startTime).format(
+                        "YYYY-MM-DD HH:mm"
+                      )} - ${dayjs(schedule.endTime).format("HH:mm")}`}
+                      description={`Available Seats: ${schedule.availableSeats}`}
+                    />
+                  </List.Item>
+                )}
+              />
+            </Col>
+          </Row>
+        </Card>
+      ))}
     </div>
   );
 };

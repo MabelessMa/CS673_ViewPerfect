@@ -4,7 +4,6 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-// 统一 Axios 实例
 const api = axios.create({
   baseURL: "http://localhost:8080/api",
   withCredentials: true,
@@ -18,20 +17,22 @@ export default function LoginPage() {
   const [registerLoading, setRegisterLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 打开注册对话框并重置状态
   const handleRegisterOpen = () => {
     registerForm.resetFields();
     setRegisterVisible(true);
     setRegisterLoading(false);
   };
 
-  // 登录提交
+  // submit login
   const handleLogin = async (values) => {
     setLoginLoading(true);
     try {
-      const response = await api.post("/login", {
+      const response = await api.post("/users/login", {
         username: values.username,
         password: values.password,
+        email: values.email,
+        phone: values.phone,
+        role: values.role,
       });
       const { token, role, userId } = response.data;
       localStorage.setItem("isLoggedIn", "true");
@@ -41,8 +42,7 @@ export default function LoginPage() {
       message.success("Login successful!");
       navigate(role === "admin" ? "/admin" : "/");
     } catch (error) {
-      const errMsg =
-        error.response?.data?.error || "Invalid username or password";
+      const errMsg = error.response?.data?.error || "Login failed";
       message.error(errMsg);
     } finally {
       setLoginLoading(false);
@@ -68,6 +68,7 @@ export default function LoginPage() {
         phone: values.phone,
         role: userRole,
       });
+      console.log(response);
       const { token, userId, role } = response.data;
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("token", token);

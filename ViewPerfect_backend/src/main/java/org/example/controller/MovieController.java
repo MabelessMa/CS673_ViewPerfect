@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.dto.MovieDTO;
 import org.example.entity.Movie;
 import org.example.repository.MovieRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,15 @@ public class MovieController {
 
     @Autowired
     private MovieRepository movieRepo;
+
+    // 轻量接口：返回所有电影的 id 和 title（用于前端映射）
+    @GetMapping("/list")
+    public List<MovieDTO> getMovieList() {
+        return movieRepo.findAll().stream()
+                .map(m -> new MovieDTO(m.getMovieId(), m.getTitle()))
+                .toList();
+    }
+
 
     // 分页 + 搜索 + 排序 查询电影
     @GetMapping
@@ -63,7 +73,7 @@ public class MovieController {
             movie.setReleaseDate(updated.getReleaseDate());
             movie.setDuration(updated.getDuration());
             movie.setPrice(updated.getPrice());
-            //movie.setImage(updated.getImage());
+            movie.setImageUrl(updated.getImageUrl());
             movie.setDescription(updated.getDescription());
             movie.setGenre(updated.getGenre());
             movie.setLanguage(updated.getLanguage());
